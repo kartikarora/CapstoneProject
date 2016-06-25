@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">transfer.sh</string>
+    <string name="no_files_uploaded">No files uploaded</string>
+
+    <string name="app_id" translatable="false">ca-app-pub-5469016771832930~5849475803</string>
+    <string name="ad_unit_id" translatable="false">ca-app-pub-5469016771832930/7326209003</string>
+</resources>
