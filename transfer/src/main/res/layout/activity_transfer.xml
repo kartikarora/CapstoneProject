@@ -11,10 +11,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/file_grid_recycler_view"
+        <GridView
+            android:id="@+id/file_grid_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:numColumns="@integer/col_count" />
 
         <TextView
             android:id="@+id/no_files_text_view"

@@ -1,6 +1,10 @@
 package me.kartikarora.transfersh.activities;
 
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -9,10 +13,9 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.GridView;
 import android.widget.TextView;
 
 import org.apache.commons.io.FileUtils;
@@ -48,7 +51,7 @@ public class TransferActivity extends AppCompatActivity {
     private CoordinatorLayout mCoordinatorLayout;
     private List<FileModel> mFiles = new ArrayList<>();
     private TextView mNoFilesTextView;
-    private RecyclerView mFileItemsRecyclerView;
+    private GridView mFileItemsRecyclerView;
     private FileGridAdapter mAdapter;
 
     @Override
@@ -57,7 +60,7 @@ public class TransferActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transfer);
         mNoFilesTextView = (TextView) findViewById(R.id.no_files_text_view);
-        mFileItemsRecyclerView = (RecyclerView) findViewById(R.id.file_grid_recycler_view);
+        mFileItemsRecyclerView = (GridView) findViewById(R.id.file_grid_view);
         FloatingActionButton uploadFileButton = (FloatingActionButton) findViewById(R.id.upload_file_fab);
         mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
 
@@ -91,21 +94,20 @@ public class TransferActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        if (mFileItemsRecyclerView != null && mNoFilesTextView != null) {
-            mFileItemsRecyclerView.setLayoutManager(new GridLayoutManager(getApplicationContext(),
-                    getResources().getInteger(R.integer.col_count), GridLayoutManager.VERTICAL, false));
-            mAdapter = new FileGridAdapter(TransferActivity.this, mFiles);
-            mFileItemsRecyclerView.setAdapter(mAdapter);
-        }
+        mAdapter = new FileGridAdapter(TransferActivity.this, mFiles);
+        mFileItemsRecyclerView.setAdapter(mAdapter);
+
     }
 
     private void checkValidity() {
-        if (mAdapter.getItemCount() == 0) {
-            mFileItemsRecyclerView.setVisibility(View.GONE);
-            mNoFilesTextView.setVisibility(View.VISIBLE);
-        } else {
-            mFileItemsRecyclerView.setVisibility(View.VISIBLE);
-            mNoFilesTextView.setVisibility(View.GONE);
+        if (mFileItemsRecyclerView != null && mNoFilesTextView != null) {
+            if (mAdapter.getCount() == 0) {
+                mFileItemsRecyclerView.setVisibility(View.GONE);
+                mNoFilesTextView.setVisibility(View.VISIBLE);
+            } else {
+                mFileItemsRecyclerView.setVisibility(View.VISIBLE);
+                mNoFilesTextView.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -167,5 +169,16 @@ public class TransferActivity extends AppCompatActivity {
         }
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d("log", "complete");
+            }
+        }, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+    }
 
 }

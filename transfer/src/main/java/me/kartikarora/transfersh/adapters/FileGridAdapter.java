@@ -1,16 +1,28 @@
 package me.kartikarora.transfersh.adapters;
 
+import android.app.DownloadManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Resources;
+import android.net.Uri;
+import android.os.Environment;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
+import android.widget.BaseAdapter;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import org.apache.commons.io.FilenameUtils;
 
 import java.util.List;
 
 import me.kartikarora.transfersh.R;
-import me.kartikarora.transfersh.fragments.FileItemFragment;
 import me.kartikarora.transfersh.models.FileModel;
 
 /**
@@ -19,19 +31,21 @@ import me.kartikarora.transfersh.models.FileModel;
  * Project : Transfer.sh
  * Date : 9/6/16
  */
-public class FileGridAdapter extends RecyclerView.Adapter<FileItemViewHolder> {
+public class FileGridAdapter extends BaseAdapter {
 
     private LayoutInflater inflater;
     private List<FileModel> files;
     private AppCompatActivity activity;
+    private Context context;
 
     public FileGridAdapter(AppCompatActivity activity, List<FileModel> files) {
-        this.inflater = LayoutInflater.from(activity.getApplicationContext());
+        this.context = activity.getApplicationContext();
+        this.inflater = LayoutInflater.from(context);
         this.files = files;
         this.activity = activity;
     }
 
-    @Override
+    /*@Override
     public FileItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = inflater.inflate(R.layout.file_item, parent, false);
         return new FileItemViewHolder(view);
@@ -46,16 +60,92 @@ public class FileGridAdapter extends RecyclerView.Adapter<FileItemViewHolder> {
     @Override
     public int getItemCount() {
         return files.size();
+    }*/
+
+    @Override
+    public int getCount() {
+        return files.size();
     }
 
-}
+    @Override
+    public FileModel getItem(int i) {
+        return files.get(i);
+    }
 
-class FileItemViewHolder extends RecyclerView.ViewHolder {
+    @Override
+    public long getItemId(int i) {
+        return i;
+    }
 
-    FrameLayout layout;
+    @Override
+    public View getView(int i, View view, ViewGroup viewGroup) {
+        if (view == null) {
+            view = inflater.inflate(R.layout.file_item, viewGroup, false);
+            FileItemViewHolder holder = new FileItemViewHolder(view);
+            view.setTag(holder);
+        }
+        FileItemViewHolder holder = (FileItemViewHolder) view.getTag();
+        final FileModel fileModel = getItem(i);
+        String name = fileModel.getFileName();
+        holder.fileNameTextView.setText(name);
+        String ext = FilenameUtils.getExtension(name);
+        int identifier = context.getResources().getIdentifier(ext, "drawable", context.getPackageName());
+        try {
+            holder.fileTypeImageView.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), identifier, null));
+        } catch (Resources.NotFoundException e) {
+            e.printStackTrace();
+            holder.fileTypeImageView.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), R.drawable.blank, null));
+        }
 
-    public FileItemViewHolder(View itemView) {
-        super(itemView);
-        layout = (FrameLayout) itemView.findViewById(R.id.item_container_frame);
+        holder.fileInfoImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Info coming soon", Snackbar.LENGTH_SHORT).show();
+            }
+        });
+
+        holder.fileShareImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                context.startActivity(new Intent()
+                        .setAction(Intent.ACTION_SEND)
+                        .putExtra(Intent.EXTRA_TEXT, fileModel.getFileUrl())
+                        .setType("text/plain")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+        });
+
+        holder.fileDownloadImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                Uri uri = Uri.parse(fileModel.getFileUrl());
+                DownloadManager.Request request = new DownloadManager.Request(uri);
+                request.setDescription(context.getString(R.string.app_name));
+                request.setTitle(fileModel.getFileName());
+                String dir = "/" + context.getString(R.string.app_name) + "/" + fileModel.getFileType() + "/" + fileModel.getFileName();
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, dir);
+                manager.enqueue(request);
+            }
+        });
+        return view;
+    }
+
+    class FileItemViewHolder extends RecyclerView.ViewHolder {
+
+        private TextView fileNameTextView;
+        private ImageView fileTypeImageView;
+        private ImageButton fileInfoImageButton;
+        private ImageButton fileShareImageButton;
+        private ImageButton fileDownloadImageButton;
+
+        public FileItemViewHolder(View view) {
+            super(view);
+            fileNameTextView = (TextView) view.findViewById(R.id.file_item_name_text_view);
+            fileTypeImageView = (ImageView) view.findViewById(R.id.file_item_type_image_view);
+            fileInfoImageButton = (ImageButton) view.findViewById(R.id.file_item_info_image_button);
+            fileShareImageButton = (ImageButton) view.findViewById(R.id.file_item_share_image_button);
+            fileDownloadImageButton = (ImageButton) view.findViewById(R.id.file_item_download_image_button);
+        }
     }
 }
