@@ -4,13 +4,19 @@ android {
     compileSdkVersion 24
     buildToolsVersion "24.0.0"
 
+    def versionMajor = 1
+    def versionMinor = 0
+    def versionPatch = 0
+    def versionBuild = 62816
+    def versionId = ((versionMajor * 1000 + versionMinor * 100 + versionPatch * 10) * 100 + versionBuild)
+
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
         applicationId "me.kartikarora.transfersh"
         minSdkVersion 19
         targetSdkVersion 24
-        versionCode 1
-        versionName "1.0"
+        versionCode versionId
+        versionName "${versionMajor}.${versionMinor}.${versionPatch} - ${versionId}"
     }
     buildTypes {
         release {

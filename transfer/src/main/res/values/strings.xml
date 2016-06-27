@@ -4,4 +4,9 @@
 
     <string name="app_id" translatable="false">ca-app-pub-5469016771832930~5849475803</string>
     <string name="ad_unit_id" translatable="false">ca-app-pub-5469016771832930/7326209003</string>
+    <string name="download_complete">Download Complete</string>
+    <string name="uploading_file">Uploading file</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    <string name="uploaded">uploaded</string>
+    <string name="report">Report</string>
 </resources>

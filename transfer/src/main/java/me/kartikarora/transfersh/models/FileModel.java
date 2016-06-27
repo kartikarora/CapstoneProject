@@ -12,16 +12,6 @@ public class FileModel {
     private String fileType;
     private String fileUrl;
     private String fileSize;
-    private String fileCreated;
-
-    public String getFileCreated() {
-        return fileCreated;
-    }
-
-    public FileModel setFileCreated(String fileCreated) {
-        this.fileCreated = fileCreated;
-        return this;
-    }
 
     public String getFileUrl() {
         return fileUrl;

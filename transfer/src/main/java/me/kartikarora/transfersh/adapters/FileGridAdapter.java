@@ -1,12 +1,15 @@
 package me.kartikarora.transfersh.adapters;
 
+import android.Manifest;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
@@ -32,6 +35,7 @@ import me.kartikarora.transfersh.models.FileModel;
  */
 public class FileGridAdapter extends BaseAdapter {
 
+    private static final int PERM_REQUEST_CODE = 3;
     private LayoutInflater inflater;
     private List<FileModel> files;
     private AppCompatActivity activity;
@@ -100,15 +104,15 @@ public class FileGridAdapter extends BaseAdapter {
         holder.fileDownloadImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-                Uri uri = Uri.parse(fileModel.getFileUrl());
-                DownloadManager.Request request = new DownloadManager.Request(uri);
-                request.setDescription(context.getString(R.string.app_name));
-                request.setTitle(fileModel.getFileName());
-                String dir = "/" + context.getString(R.string.app_name) + "/" + fileModel.getFileType()
-                        + "/" + fileModel.getFileName();
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, dir);
-                long id = manager.enqueue(request);
+                if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+                    beginDownload(fileModel);
+                else {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+                        showRationale(view);
+                    else {
+                        showPermissionDialog();
+                    }
+                }
             }
         });
         return view;
@@ -129,5 +133,31 @@ public class FileGridAdapter extends BaseAdapter {
             fileShareImageButton = (ImageButton) view.findViewById(R.id.file_item_share_image_button);
             fileDownloadImageButton = (ImageButton) view.findViewById(R.id.file_item_download_image_button);
         }
+    }
+
+    private void beginDownload(FileModel fileModel) {
+        DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        Uri uri = Uri.parse(fileModel.getFileUrl());
+        DownloadManager.Request request = new DownloadManager.Request(uri);
+        request.setDescription(context.getString(R.string.app_name));
+        request.setTitle(fileModel.getFileName());
+        String dir = "/" + context.getString(R.string.app_name) + "/" + fileModel.getFileType()
+                + "/" + fileModel.getFileName();
+        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, dir);
+        manager.enqueue(request);
+    }
+
+    private void showRationale(View view) {
+        Snackbar.make(view, "Need permission to save file locally", Snackbar.LENGTH_INDEFINITE)
+                .setAction(android.R.string.ok, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        showPermissionDialog();
+                    }
+                }).show();
+    }
+
+    private void showPermissionDialog() {
+        ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERM_REQUEST_CODE);
     }
 }

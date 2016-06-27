@@ -4,6 +4,7 @@ import android.app.DownloadManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -118,7 +119,9 @@ public class TransferActivity extends AppCompatActivity {
     }
 
     private void uploadFile(Uri uri) throws IOException {
-
+        final ProgressDialog dialog = new ProgressDialog(TransferActivity.this);
+        dialog.setMessage(getString(R.string.uploading_file));
+        dialog.show();
         Cursor cursor = getContentResolver().query(uri, null, null, null, null);
         if (cursor != null) {
             cursor.moveToFirst();
@@ -153,7 +156,7 @@ public class TransferActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                         String result = sb.toString();
-                        Snackbar.make(mCoordinatorLayout, result, Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(mCoordinatorLayout, name + " " + getString(R.string.uploaded), Snackbar.LENGTH_SHORT).show();
                         FileModel f = new FileModel()
                                 .setFileName(name)
                                 .setFileSize(String.valueOf(file.getTotalSpace()))
@@ -163,11 +166,22 @@ public class TransferActivity extends AppCompatActivity {
                         setupRecyclerView();
                         checkValidity();
                         FileUtils.deleteQuietly(file);
+                        if (dialog.isShowing())
+                            dialog.hide();
                     }
 
                     @Override
                     public void failure(RetrofitError error) {
                         error.printStackTrace();
+                        if (dialog.isShowing())
+                            dialog.hide();
+                        Snackbar.make(mCoordinatorLayout, R.string.something_went_wrong, Snackbar.LENGTH_INDEFINITE)
+                                .setAction(R.string.report, new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        // TODO add feedback code
+                                    }
+                                }).show();
                     }
                 });
             } else
@@ -189,9 +203,12 @@ public class TransferActivity extends AppCompatActivity {
                 PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
                 Notification notification = new NotificationCompat.Builder(context)
                         .setContentTitle(getString(R.string.app_name))
-                        .setContentText("Download Complete")
-                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentText(getString(R.string.download_complete))
+                        .setSmallIcon(R.drawable.ic_offline_pin)
+                        //.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
                         .setContentIntent(pendingIntent)
+                        .setAutoCancel(true)
+                        .setTicker(getString(R.string.download_complete))
                         .build();
                 NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 notificationManager.notify(NOTIFICATION_ID, notification);
