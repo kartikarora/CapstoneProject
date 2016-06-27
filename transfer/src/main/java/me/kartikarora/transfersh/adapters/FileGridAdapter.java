@@ -9,7 +9,6 @@ import android.os.Environment;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,23 +43,6 @@ public class FileGridAdapter extends BaseAdapter {
         this.files = files;
         this.activity = activity;
     }
-
-    /*@Override
-    public FileItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = inflater.inflate(R.layout.file_item, parent, false);
-        return new FileItemViewHolder(view);
-    }
-
-    @Override
-    public void onBindViewHolder(FileItemViewHolder holder, int position) {
-        FileItemFragment fragment = FileItemFragment.newInstance(activity, files.get(position));
-        activity.getSupportFragmentManager().beginTransaction().replace(R.id.item_container_frame, fragment).commit();
-    }
-
-    @Override
-    public int getItemCount() {
-        return files.size();
-    }*/
 
     @Override
     public int getCount() {
@@ -123,15 +105,16 @@ public class FileGridAdapter extends BaseAdapter {
                 DownloadManager.Request request = new DownloadManager.Request(uri);
                 request.setDescription(context.getString(R.string.app_name));
                 request.setTitle(fileModel.getFileName());
-                String dir = "/" + context.getString(R.string.app_name) + "/" + fileModel.getFileType() + "/" + fileModel.getFileName();
+                String dir = "/" + context.getString(R.string.app_name) + "/" + fileModel.getFileType()
+                        + "/" + fileModel.getFileName();
                 request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, dir);
-                manager.enqueue(request);
+                long id = manager.enqueue(request);
             }
         });
         return view;
     }
 
-    class FileItemViewHolder extends RecyclerView.ViewHolder {
+    private class FileItemViewHolder {
 
         private TextView fileNameTextView;
         private ImageView fileTypeImageView;
@@ -140,7 +123,6 @@ public class FileGridAdapter extends BaseAdapter {
         private ImageButton fileDownloadImageButton;
 
         public FileItemViewHolder(View view) {
-            super(view);
             fileNameTextView = (TextView) view.findViewById(R.id.file_item_name_text_view);
             fileTypeImageView = (ImageView) view.findViewById(R.id.file_item_type_image_view);
             fileInfoImageButton = (ImageButton) view.findViewById(R.id.file_item_info_image_button);

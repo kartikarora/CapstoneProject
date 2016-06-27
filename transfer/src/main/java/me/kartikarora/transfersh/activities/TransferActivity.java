@@ -1,6 +1,9 @@
 package me.kartikarora.transfersh.activities;
 
 import android.app.DownloadManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +15,7 @@ import android.provider.OpenableColumns;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -48,11 +52,13 @@ import retrofit.mime.TypedFile;
 public class TransferActivity extends AppCompatActivity {
 
     private static final int FILE_RESULT_CODE = 1;
+    private static final int NOTIFICATION_ID = 2;
     private CoordinatorLayout mCoordinatorLayout;
     private List<FileModel> mFiles = new ArrayList<>();
     private TextView mNoFilesTextView;
     private GridView mFileItemsRecyclerView;
     private FileGridAdapter mAdapter;
+    private BroadcastReceiver mDownloadBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -173,12 +179,30 @@ public class TransferActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(new BroadcastReceiver() {
+        IntentFilter intentFilter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+        mDownloadBroadcastReceiver = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent intent) {
-                Log.d("log", "complete");
+            public void onReceive(Context context, Intent i) {
+                Intent intent = new Intent();
+                intent.setAction(DownloadManager.ACTION_VIEW_DOWNLOADS);
+
+                PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+                Notification notification = new NotificationCompat.Builder(context)
+                        .setContentTitle(getString(R.string.app_name))
+                        .setContentText("Download Complete")
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentIntent(pendingIntent)
+                        .build();
+                NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                notificationManager.notify(NOTIFICATION_ID, notification);
             }
-        }, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        };
+        registerReceiver(mDownloadBroadcastReceiver, intentFilter);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mDownloadBroadcastReceiver);
+    }
 }
