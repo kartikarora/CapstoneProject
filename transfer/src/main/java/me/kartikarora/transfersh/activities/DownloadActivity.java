@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -17,13 +18,20 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
+
 import org.apache.commons.io.FilenameUtils;
 
 import me.kartikarora.transfersh.BuildConfig;
 import me.kartikarora.transfersh.R;
+import me.kartikarora.transfersh.adapters.FileGridAdapter;
+import me.kartikarora.transfersh.applications.TransferApplication;
 
 public class DownloadActivity extends AppCompatActivity {
-    private static final int PERM_REQUEST_CODE = BuildConfig.VERSION_CODE;
+    private static final int PERM_REQUEST_CODE = BuildConfig.VERSION_CODE / 10000;
+    private Tracker mTracker;
+    private String name, type, url;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,10 +40,11 @@ public class DownloadActivity extends AppCompatActivity {
 
         final CoordinatorLayout layout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
         Intent intent = getIntent();
-        final String name, type, url;
         url = intent.getData().toString();
         name = FilenameUtils.getName(url);
         type = MimeTypeMap.getFileExtensionFromUrl(url);
+        TransferApplication application = (TransferApplication) getApplication();
+        mTracker = application.getDefaultTracker();
 
         new AlertDialog.Builder(DownloadActivity.this)
                 .setMessage(getString(R.string.download_file) + " " + getString(R.string.app_name) + "?")
@@ -54,9 +63,18 @@ public class DownloadActivity extends AppCompatActivity {
                 })
                 .create().show();
 
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory("Activity : " + this.getClass().getSimpleName())
+                .setAction("Launched")
+                .build());
+
     }
 
     private void beginDownload(String name, String type, String url) {
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory("Action")
+                .setAction("Download : " + url)
+                .build());
         DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
         Uri uri = Uri.parse(url);
         DownloadManager.Request request = new DownloadManager.Request(uri);
@@ -92,6 +110,15 @@ public class DownloadActivity extends AppCompatActivity {
                 showPermissionDialog();
                 checkForDownload(name, type, url, view);
             }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == FileGridAdapter.PERM_REQUEST_CODE && grantResults.length > 0) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                beginDownload(name, type, url);
         }
     }
 }

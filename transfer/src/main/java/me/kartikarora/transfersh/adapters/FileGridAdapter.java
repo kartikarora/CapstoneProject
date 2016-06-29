@@ -22,6 +22,9 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
+
 import org.apache.commons.io.FilenameUtils;
 
 import me.kartikarora.transfersh.BuildConfig;
@@ -41,12 +44,14 @@ public class FileGridAdapter extends CursorAdapter {
     private AppCompatActivity activity;
     private Context context;
     private PermissionRequestResult permissionRequestResult;
+    private Tracker tracker;
 
-    public FileGridAdapter(AppCompatActivity activity, Cursor cursor) {
+    public FileGridAdapter(AppCompatActivity activity, Cursor cursor, Tracker tracker) {
         super(activity.getApplicationContext(), cursor, false);
         this.context = activity.getApplicationContext();
         this.inflater = LayoutInflater.from(context);
         this.activity = activity;
+        this.tracker = tracker;
     }
 
     public PermissionRequestResult getPermissionRequestResult() {
@@ -98,6 +103,10 @@ public class FileGridAdapter extends CursorAdapter {
         holder.fileShareImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                tracker.send(new HitBuilders.EventBuilder()
+                        .setCategory("Action")
+                        .setAction("Share : " + url)
+                        .build());
                 context.startActivity(new Intent()
                         .setAction(Intent.ACTION_SEND)
                         .putExtra(Intent.EXTRA_TEXT, url)
@@ -132,6 +141,10 @@ public class FileGridAdapter extends CursorAdapter {
     }
 
     private void beginDownload(String name, String type, String url) {
+        tracker.send(new HitBuilders.EventBuilder()
+            .setCategory("Action")
+            .setAction("Download : " + url)
+            .build());
         DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         Uri uri = Uri.parse(url);
         DownloadManager.Request request = new DownloadManager.Request(uri);

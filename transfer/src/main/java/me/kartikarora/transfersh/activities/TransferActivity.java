@@ -21,6 +21,9 @@ import android.view.View;
 import android.widget.GridView;
 import android.widget.TextView;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -34,6 +37,7 @@ import java.io.OutputStream;
 import me.kartikarora.transfersh.BuildConfig;
 import me.kartikarora.transfersh.R;
 import me.kartikarora.transfersh.adapters.FileGridAdapter;
+import me.kartikarora.transfersh.applications.TransferApplication;
 import me.kartikarora.transfersh.contracts.FilesContract;
 import me.kartikarora.transfersh.network.TransferClient;
 import retrofit.ResponseCallback;
@@ -54,6 +58,7 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
     private TextView mNoFilesTextView;
     private GridView mFileItemsGridView;
     private FileGridAdapter mAdapter;
+    private Tracker mTracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +82,13 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
         }
 
         getSupportLoaderManager().initLoader(BuildConfig.VERSION_CODE, null, this);
+        TransferApplication application = (TransferApplication) getApplication();
+        mTracker = application.getDefaultTracker();
+
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory("Activity : " + this.getClass().getSimpleName())
+                .setAction("Launched")
+                .build());
     }
 
     @Override
@@ -180,7 +192,7 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
         if (mAdapter != null)
             mAdapter.swapCursor(data);
         else
-            mAdapter = new FileGridAdapter(TransferActivity.this, data);
+            mAdapter = new FileGridAdapter(TransferActivity.this, data,mTracker);
         mFileItemsGridView.setAdapter(mAdapter);
         mAdapter.notifyDataSetChanged();
         if (null != data && data.getCount() == 0) {
