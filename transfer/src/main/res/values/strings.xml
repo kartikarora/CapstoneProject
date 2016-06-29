@@ -9,4 +9,7 @@
     <string name="something_went_wrong">Something went wrong</string>
     <string name="uploaded">uploaded</string>
     <string name="report">Report</string>
+    <string name="content_authority" translatable="false">me.kartikarora.transfersh</string>
+    <string name="download_file">Download this file using</string>
+    <string name="permission_message">Need permission to save file locally</string>
 </resources>

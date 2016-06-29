@@ -7,8 +7,8 @@ android {
     def versionMajor = 1
     def versionMinor = 0
     def versionPatch = 0
-    def versionBuild = 62816
-    def versionId = ((versionMajor * 1000 + versionMinor * 100 + versionPatch * 10) * 100 + versionBuild)
+    def versionBuild = getDate()
+    def versionId = ((versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100) * 10 + versionBuild)
 
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
@@ -32,9 +32,15 @@ dependencies {
     compile 'com.android.support:cardview-v7:24.0.0'
     compile 'com.android.support:design:24.0.0'
     compile 'com.squareup.retrofit:retrofit:1.9.0'
-    compile 'com.google.android.gms:play-services-analytics:9.0.2'
-    compile 'com.google.firebase:firebase-ads:9.0.2'
+    compile 'com.google.android.gms:play-services-analytics:9.2.0'
+    compile 'com.google.firebase:firebase-ads:9.2.0'
     compile group: 'commons-io', name: 'commons-io', version: '2.5'
 }
 
 apply plugin: 'com.google.gms.google-services'
+
+def getDate() {
+    def date = new Date()
+    def formattedDate = date.format('MMddyy')
+    return formattedDate
+}

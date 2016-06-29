@@ -29,7 +29,8 @@ public class FilesDBHelper extends SQLiteOpenHelper {
                 FilesContract.FilesEntry._ID + " INTEGER PRIMARY KEY, " +
                 FilesContract.FilesEntry.COLUMN_NAME + " TEXT NOT NULL, " +
                 FilesContract.FilesEntry.COLUMN_TYPE + " TEXT NOT NULL, " +
-                FilesContract.FilesEntry.COLUMN_URL + " TEXT NOT NULL, " + " );";
+                FilesContract.FilesEntry.COLUMN_URL + " TEXT NOT NULL, " +
+                FilesContract.FilesEntry.COLUMN_SIZE + " TEXT NOT NULL );";
         db.execSQL(SQL_CREATE_TABLE);
     }
 

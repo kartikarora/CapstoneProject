@@ -1,14 +1,9 @@
 package me.kartikarora.transfersh.activities;
 
-import android.app.DownloadManager;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
-import android.content.Context;
+import android.content.ContentValues;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,7 +11,6 @@ import android.provider.OpenableColumns;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -32,12 +26,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import me.kartikarora.transfersh.R;
 import me.kartikarora.transfersh.adapters.FileGridAdapter;
-import me.kartikarora.transfersh.models.FileModel;
+import me.kartikarora.transfersh.contracts.FilesContract;
 import me.kartikarora.transfersh.network.TransferClient;
 import retrofit.ResponseCallback;
 import retrofit.RetrofitError;
@@ -53,9 +45,7 @@ import retrofit.mime.TypedFile;
 public class TransferActivity extends AppCompatActivity {
 
     private static final int FILE_RESULT_CODE = 1;
-    private static final int NOTIFICATION_ID = 2;
     private CoordinatorLayout mCoordinatorLayout;
-    private List<FileModel> mFiles = new ArrayList<>();
     private TextView mNoFilesTextView;
     private GridView mFileItemsRecyclerView;
     private FileGridAdapter mAdapter;
@@ -101,9 +91,9 @@ public class TransferActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        mAdapter = new FileGridAdapter(TransferActivity.this, mFiles);
+        Cursor cursor = getContentResolver().query(FilesContract.BASE_CONTENT_URI, null, null, null, null);
+        mAdapter = new FileGridAdapter(TransferActivity.this, cursor);
         mFileItemsRecyclerView.setAdapter(mAdapter);
-
     }
 
     private void checkValidity() {
@@ -157,12 +147,14 @@ public class TransferActivity extends AppCompatActivity {
                         }
                         String result = sb.toString();
                         Snackbar.make(mCoordinatorLayout, name + " " + getString(R.string.uploaded), Snackbar.LENGTH_SHORT).show();
-                        FileModel f = new FileModel()
-                                .setFileName(name)
-                                .setFileSize(String.valueOf(file.getTotalSpace()))
-                                .setFileType(mimeType)
-                                .setFileUrl(result);
-                        mFiles.add(0, f);
+
+                        ContentValues values = new ContentValues();
+                        values.put(FilesContract.FilesEntry.COLUMN_NAME, name);
+                        values.put(FilesContract.FilesEntry.COLUMN_TYPE, mimeType);
+                        values.put(FilesContract.FilesEntry.COLUMN_URL, result);
+                        values.put(FilesContract.FilesEntry.COLUMN_SIZE, String.valueOf(file.getTotalSpace()));
+                        getContentResolver().insert(FilesContract.BASE_CONTENT_URI, values);
+
                         setupRecyclerView();
                         checkValidity();
                         FileUtils.deleteQuietly(file);
@@ -187,39 +179,5 @@ public class TransferActivity extends AppCompatActivity {
             } else
                 Snackbar.make(mCoordinatorLayout, "Unable to read file", Snackbar.LENGTH_SHORT).show();
         }
-    }
-
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        IntentFilter intentFilter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-        mDownloadBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i) {
-                Intent intent = new Intent();
-                intent.setAction(DownloadManager.ACTION_VIEW_DOWNLOADS);
-
-                PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-                Notification notification = new NotificationCompat.Builder(context)
-                        .setContentTitle(getString(R.string.app_name))
-                        .setContentText(getString(R.string.download_complete))
-                        .setSmallIcon(R.drawable.ic_offline_pin)
-                        //.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
-                        .setContentIntent(pendingIntent)
-                        .setAutoCancel(true)
-                        .setTicker(getString(R.string.download_complete))
-                        .build();
-                NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                notificationManager.notify(NOTIFICATION_ID, notification);
-            }
-        };
-        registerReceiver(mDownloadBroadcastReceiver, intentFilter);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(mDownloadBroadcastReceiver);
     }
 }

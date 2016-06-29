@@ -24,6 +24,7 @@ public class FilesContract {
         public static final String COLUMN_NAME = "name";
         public static final String COLUMN_TYPE = "type";
         public static final String COLUMN_URL = "url";
+        public static final String COLUMN_SIZE = "size";
 
         public static Uri buildUri(long id) {
             return ContentUris.withAppendedId(BASE_CONTENT_URI, id);

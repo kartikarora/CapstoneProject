@@ -6,26 +6,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.res.ResourcesCompat;
+import android.support.v4.widget.CursorAdapter;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.apache.commons.io.FilenameUtils;
 
-import java.util.List;
-
 import me.kartikarora.transfersh.R;
-import me.kartikarora.transfersh.models.FileModel;
+import me.kartikarora.transfersh.contracts.FilesContract;
 
 /**
  * Developer: chipset
@@ -33,46 +33,43 @@ import me.kartikarora.transfersh.models.FileModel;
  * Project : Transfer.sh
  * Date : 9/6/16
  */
-public class FileGridAdapter extends BaseAdapter {
+public class FileGridAdapter extends CursorAdapter {
 
     private static final int PERM_REQUEST_CODE = 3;
     private LayoutInflater inflater;
-    private List<FileModel> files;
     private AppCompatActivity activity;
     private Context context;
+    private Cursor cursor;
 
-    public FileGridAdapter(AppCompatActivity activity, List<FileModel> files) {
+    public FileGridAdapter(AppCompatActivity activity, Cursor cursor) {
+        super(activity.getApplicationContext(), cursor);
         this.context = activity.getApplicationContext();
         this.inflater = LayoutInflater.from(context);
-        this.files = files;
         this.activity = activity;
+        this.cursor = cursor;
+    }
+
+
+    @Override
+    public View newView(Context context, Cursor cursor, ViewGroup parent) {
+        View view = inflater.inflate(R.layout.file_item, parent, false);
+        FileItemViewHolder holder = new FileItemViewHolder(view);
+        view.setTag(holder);
+        return view;
     }
 
     @Override
-    public int getCount() {
-        return files.size();
-    }
-
-    @Override
-    public FileModel getItem(int i) {
-        return files.get(i);
-    }
-
-    @Override
-    public long getItemId(int i) {
-        return i;
-    }
-
-    @Override
-    public View getView(int i, View view, ViewGroup viewGroup) {
-        if (view == null) {
-            view = inflater.inflate(R.layout.file_item, viewGroup, false);
-            FileItemViewHolder holder = new FileItemViewHolder(view);
-            view.setTag(holder);
-        }
+    public void bindView(View view, final Context context, Cursor cursor) {
         FileItemViewHolder holder = (FileItemViewHolder) view.getTag();
-        final FileModel fileModel = getItem(i);
-        String name = fileModel.getFileName();
+        int nameCol = cursor.getColumnIndex(FilesContract.FilesEntry.COLUMN_NAME);
+        int typeCol = cursor.getColumnIndex(FilesContract.FilesEntry.COLUMN_TYPE);
+        int sizeCol = cursor.getColumnIndex(FilesContract.FilesEntry.COLUMN_SIZE);
+        int urlCol = cursor.getColumnIndex(FilesContract.FilesEntry.COLUMN_URL);
+        final String name = cursor.getString(nameCol);
+        final String type = cursor.getString(typeCol);
+        String size = cursor.getString(sizeCol);
+        Log.d(this.getClass().getSimpleName(), size);
+        final String url = cursor.getString(urlCol);
         holder.fileNameTextView.setText(name);
         String ext = FilenameUtils.getExtension(name);
         int identifier = context.getResources().getIdentifier(ext, "drawable", context.getPackageName());
@@ -95,7 +92,7 @@ public class FileGridAdapter extends BaseAdapter {
             public void onClick(View view) {
                 context.startActivity(new Intent()
                         .setAction(Intent.ACTION_SEND)
-                        .putExtra(Intent.EXTRA_TEXT, fileModel.getFileUrl())
+                        .putExtra(Intent.EXTRA_TEXT, url)
                         .setType("text/plain")
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             }
@@ -104,18 +101,9 @@ public class FileGridAdapter extends BaseAdapter {
         holder.fileDownloadImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
-                    beginDownload(fileModel);
-                else {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
-                        showRationale(view);
-                    else {
-                        showPermissionDialog();
-                    }
-                }
+                checkForDownload(name, type, url, view);
             }
         });
-        return view;
     }
 
     private class FileItemViewHolder {
@@ -135,20 +123,19 @@ public class FileGridAdapter extends BaseAdapter {
         }
     }
 
-    private void beginDownload(FileModel fileModel) {
+    private void beginDownload(String name, String type, String url) {
         DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-        Uri uri = Uri.parse(fileModel.getFileUrl());
+        Uri uri = Uri.parse(url);
         DownloadManager.Request request = new DownloadManager.Request(uri);
         request.setDescription(context.getString(R.string.app_name));
-        request.setTitle(fileModel.getFileName());
-        String dir = "/" + context.getString(R.string.app_name) + "/" + fileModel.getFileType()
-                + "/" + fileModel.getFileName();
+        request.setTitle(name);
+        String dir = "/" + context.getString(R.string.app_name) + "/" + type + "/" + name;
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, dir);
         manager.enqueue(request);
     }
 
     private void showRationale(View view) {
-        Snackbar.make(view, "Need permission to save file locally", Snackbar.LENGTH_INDEFINITE)
+        Snackbar.make(view, R.string.permission_message, Snackbar.LENGTH_INDEFINITE)
                 .setAction(android.R.string.ok, new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -159,5 +146,19 @@ public class FileGridAdapter extends BaseAdapter {
 
     private void showPermissionDialog() {
         ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERM_REQUEST_CODE);
+    }
+
+    private void checkForDownload(String name, String type, String url, View view) {
+
+        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            beginDownload(name, type, url);
+        else {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+                showRationale(view);
+            else {
+                showPermissionDialog();
+                checkForDownload(name, type, url, view);
+            }
+        }
     }
 }
