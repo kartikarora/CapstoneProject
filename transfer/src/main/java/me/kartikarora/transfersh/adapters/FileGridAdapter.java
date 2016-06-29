@@ -13,8 +13,8 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.widget.CursorAdapter;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +24,7 @@ import android.widget.TextView;
 
 import org.apache.commons.io.FilenameUtils;
 
+import me.kartikarora.transfersh.BuildConfig;
 import me.kartikarora.transfersh.R;
 import me.kartikarora.transfersh.contracts.FilesContract;
 
@@ -35,20 +36,22 @@ import me.kartikarora.transfersh.contracts.FilesContract;
  */
 public class FileGridAdapter extends CursorAdapter {
 
-    private static final int PERM_REQUEST_CODE = 3;
+    public static final int PERM_REQUEST_CODE = BuildConfig.VERSION_CODE / 10000;
     private LayoutInflater inflater;
     private AppCompatActivity activity;
     private Context context;
-    private Cursor cursor;
+    private PermissionRequestResult permissionRequestResult;
 
     public FileGridAdapter(AppCompatActivity activity, Cursor cursor) {
-        super(activity.getApplicationContext(), cursor);
+        super(activity.getApplicationContext(), cursor, false);
         this.context = activity.getApplicationContext();
         this.inflater = LayoutInflater.from(context);
         this.activity = activity;
-        this.cursor = cursor;
     }
 
+    public PermissionRequestResult getPermissionRequestResult() {
+        return permissionRequestResult;
+    }
 
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent) {
@@ -67,8 +70,7 @@ public class FileGridAdapter extends CursorAdapter {
         int urlCol = cursor.getColumnIndex(FilesContract.FilesEntry.COLUMN_URL);
         final String name = cursor.getString(nameCol);
         final String type = cursor.getString(typeCol);
-        String size = cursor.getString(sizeCol);
-        Log.d(this.getClass().getSimpleName(), size);
+        final String size = cursor.getString(sizeCol);
         final String url = cursor.getString(urlCol);
         holder.fileNameTextView.setText(name);
         String ext = FilenameUtils.getExtension(name);
@@ -83,7 +85,13 @@ public class FileGridAdapter extends CursorAdapter {
         holder.fileInfoImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Info coming soon", Snackbar.LENGTH_SHORT).show();
+                String message = "Name: " + name + "\n" +
+                        "File type: " + type + "\n" +
+                        "URL: " + url;
+                new AlertDialog.Builder(activity)
+                        .setMessage(message)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .create().show();
             }
         });
 
@@ -148,8 +156,13 @@ public class FileGridAdapter extends CursorAdapter {
         ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERM_REQUEST_CODE);
     }
 
-    private void checkForDownload(String name, String type, String url, View view) {
-
+    private void checkForDownload(final String name, final String type, final String url, View view) {
+        this.permissionRequestResult = new PermissionRequestResult() {
+            @Override
+            public void onPermitted() {
+                beginDownload(name, type, url);
+            }
+        };
         if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
             beginDownload(name, type, url);
         else {
@@ -157,8 +170,11 @@ public class FileGridAdapter extends CursorAdapter {
                 showRationale(view);
             else {
                 showPermissionDialog();
-                checkForDownload(name, type, url, view);
             }
         }
+    }
+
+    public interface PermissionRequestResult {
+        void onPermitted();
     }
 }

@@ -19,10 +19,11 @@ import android.webkit.MimeTypeMap;
 
 import org.apache.commons.io.FilenameUtils;
 
+import me.kartikarora.transfersh.BuildConfig;
 import me.kartikarora.transfersh.R;
 
 public class DownloadActivity extends AppCompatActivity {
-    private static final int PERM_REQUEST_CODE = 3;
+    private static final int PERM_REQUEST_CODE = BuildConfig.VERSION_CODE;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

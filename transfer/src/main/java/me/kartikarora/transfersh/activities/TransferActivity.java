@@ -1,16 +1,20 @@
 package me.kartikarora.transfersh.activities;
 
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.support.annotation.NonNull;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -27,6 +31,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
+import me.kartikarora.transfersh.BuildConfig;
 import me.kartikarora.transfersh.R;
 import me.kartikarora.transfersh.adapters.FileGridAdapter;
 import me.kartikarora.transfersh.contracts.FilesContract;
@@ -42,14 +47,13 @@ import retrofit.mime.TypedFile;
  * Project : Transfer.sh
  * Date : 9/6/16
  */
-public class TransferActivity extends AppCompatActivity {
+public class TransferActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private static final int FILE_RESULT_CODE = 1;
+    private static final int FILE_RESULT_CODE = BuildConfig.VERSION_CODE / 10000;
     private CoordinatorLayout mCoordinatorLayout;
     private TextView mNoFilesTextView;
-    private GridView mFileItemsRecyclerView;
+    private GridView mFileItemsGridView;
     private FileGridAdapter mAdapter;
-    private BroadcastReceiver mDownloadBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,11 +61,9 @@ public class TransferActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transfer);
         mNoFilesTextView = (TextView) findViewById(R.id.no_files_text_view);
-        mFileItemsRecyclerView = (GridView) findViewById(R.id.file_grid_view);
+        mFileItemsGridView = (GridView) findViewById(R.id.file_grid_view);
         FloatingActionButton uploadFileButton = (FloatingActionButton) findViewById(R.id.upload_file_fab);
         mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
-
-        setupRecyclerView();
 
         if (uploadFileButton != null) {
             uploadFileButton.setOnClickListener(new View.OnClickListener() {
@@ -74,7 +76,7 @@ public class TransferActivity extends AppCompatActivity {
             });
         }
 
-        checkValidity();
+        getSupportLoaderManager().initLoader(BuildConfig.VERSION_CODE, null, this);
     }
 
     @Override
@@ -90,27 +92,15 @@ public class TransferActivity extends AppCompatActivity {
         }
     }
 
-    private void setupRecyclerView() {
-        Cursor cursor = getContentResolver().query(FilesContract.BASE_CONTENT_URI, null, null, null, null);
-        mAdapter = new FileGridAdapter(TransferActivity.this, cursor);
-        mFileItemsRecyclerView.setAdapter(mAdapter);
-    }
-
-    private void checkValidity() {
-        if (mFileItemsRecyclerView != null && mNoFilesTextView != null) {
-            if (mAdapter.getCount() == 0) {
-                mFileItemsRecyclerView.setVisibility(View.GONE);
-                mNoFilesTextView.setVisibility(View.VISIBLE);
-            } else {
-                mFileItemsRecyclerView.setVisibility(View.VISIBLE);
-                mNoFilesTextView.setVisibility(View.GONE);
-            }
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     private void uploadFile(Uri uri) throws IOException {
         final ProgressDialog dialog = new ProgressDialog(TransferActivity.this);
         dialog.setMessage(getString(R.string.uploading_file));
+        dialog.setCancelable(false);
         dialog.show();
         Cursor cursor = getContentResolver().query(uri, null, null, null, null);
         if (cursor != null) {
@@ -154,9 +144,7 @@ public class TransferActivity extends AppCompatActivity {
                         values.put(FilesContract.FilesEntry.COLUMN_URL, result);
                         values.put(FilesContract.FilesEntry.COLUMN_SIZE, String.valueOf(file.getTotalSpace()));
                         getContentResolver().insert(FilesContract.BASE_CONTENT_URI, values);
-
-                        setupRecyclerView();
-                        checkValidity();
+                        getSupportLoaderManager().restartLoader(BuildConfig.VERSION_CODE, null, TransferActivity.this);
                         FileUtils.deleteQuietly(file);
                         if (dialog.isShowing())
                             dialog.hide();
@@ -177,7 +165,49 @@ public class TransferActivity extends AppCompatActivity {
                     }
                 });
             } else
-                Snackbar.make(mCoordinatorLayout, "Unable to read file", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(mCoordinatorLayout, R.string.unable_to_read, Snackbar.LENGTH_SHORT).show();
         }
     }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new CursorLoader(this, FilesContract.BASE_CONTENT_URI, null, null, null, null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
+        if (mAdapter != null)
+            mAdapter.swapCursor(data);
+        else
+            mAdapter = new FileGridAdapter(TransferActivity.this, data);
+        mFileItemsGridView.setAdapter(mAdapter);
+        mAdapter.notifyDataSetChanged();
+        if (null != data && data.getCount() == 0) {
+            mFileItemsGridView.setVisibility(View.GONE);
+            mNoFilesTextView.setVisibility(View.VISIBLE);
+        } else {
+            mFileItemsGridView.setVisibility(View.VISIBLE);
+            mNoFilesTextView.setVisibility(View.GONE);
+        }
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mFileItemsGridView.setVisibility(View.VISIBLE);
+        mNoFilesTextView.setVisibility(View.GONE);
+        mAdapter.swapCursor(null);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == FileGridAdapter.PERM_REQUEST_CODE && grantResults.length > 0) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                mAdapter.getPermissionRequestResult().onPermitted();
+        }
+    }
+
+
 }

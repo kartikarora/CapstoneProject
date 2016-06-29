@@ -12,4 +12,5 @@
     <string name="content_authority" translatable="false">me.kartikarora.transfersh</string>
     <string name="download_file">Download this file using</string>
     <string name="permission_message">Need permission to save file locally</string>
+    <string name="unable_to_read">Unable to read file</string>
 </resources>
