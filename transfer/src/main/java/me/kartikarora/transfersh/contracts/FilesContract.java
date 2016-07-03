@@ -36,7 +36,6 @@ public class FilesContract {
         public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/" + BuildConfig.APPLICATION_ID;
 
         public static final String TABLE_NAME = "filesdata";
-//        public static final String COLUMN_ID = "id";
         public static final String COLUMN_NAME = "name";
         public static final String COLUMN_TYPE = "type";
         public static final String COLUMN_URL = "url";

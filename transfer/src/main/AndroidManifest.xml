@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
     Copyright 2016 Kartik Arora
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -75,14 +74,28 @@
         <provider
             android:name=".providers.FilesProvider"
             android:authorities="me.kartikarora.transfersh"
-            android:exported="false"
-            android:syncable="true" />
+            android:exported="true"
+            android:syncable="true"/>
 
         <receiver android:name=".receivers.DownloadCompleteBroadcastReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>
         </receiver>
+
+        <receiver android:name=".providers.FilesAppWidgetProvider">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/files_appwidget_provider" />
+        </receiver>
+
+        <service
+            android:name=".services.FilesRemoteViewsService"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
     </application>
 
 </manifest>
