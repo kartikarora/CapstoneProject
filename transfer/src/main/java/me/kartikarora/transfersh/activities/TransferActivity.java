@@ -17,6 +17,8 @@
 package me.kartikarora.transfersh.activities;
 
 import android.app.ProgressDialog;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -60,6 +62,7 @@ import me.kartikarora.transfersh.adapters.FileGridAdapter;
 import me.kartikarora.transfersh.applications.TransferApplication;
 import me.kartikarora.transfersh.contracts.FilesContract;
 import me.kartikarora.transfersh.network.TransferClient;
+import me.kartikarora.transfersh.providers.FilesAppWidgetProvider;
 import retrofit.ResponseCallback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -79,6 +82,7 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
     private GridView mFileItemsGridView;
     private FileGridAdapter mAdapter;
     private Tracker mTracker;
+    private AdView mAdView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,7 +93,7 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
         mFileItemsGridView = (GridView) findViewById(R.id.file_grid_view);
         FloatingActionButton uploadFileButton = (FloatingActionButton) findViewById(R.id.upload_file_fab);
         mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
-        AdView adView = (AdView) findViewById(R.id.banner_ad_view);
+        mAdView = (AdView) findViewById(R.id.banner_ad_view);
 
         if (uploadFileButton != null) {
             uploadFileButton.setOnClickListener(new View.OnClickListener() {
@@ -110,11 +114,6 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
                 .setCategory("Activity : " + this.getClass().getSimpleName())
                 .setAction("Launched")
                 .build());
-
-        AdRequest adRequest = new AdRequest.Builder()
-                .addTestDevice("26FBB03CE9B06AD8ABBE73E092D5CCF2")
-                .build();
-        adView.loadAd(adRequest);
     }
 
     @Override
@@ -133,6 +132,16 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
     @Override
     protected void onResume() {
         super.onResume();
+        AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice("26FBB03CE9B06AD8ABBE73E092D5CCF2")
+                .build();
+        mAdView.loadAd(adRequest);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
     }
 
     private void uploadFile(Uri uri) throws IOException {
@@ -221,6 +230,8 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
             mAdapter = new FileGridAdapter(TransferActivity.this, data, mTracker);
         mFileItemsGridView.setAdapter(mAdapter);
         mAdapter.notifyDataSetChanged();
+        updateWidgets();
+
         if (null != data && data.getCount() == 0) {
             mFileItemsGridView.setVisibility(View.GONE);
             mNoFilesTextView.setVisibility(View.VISIBLE);
@@ -257,7 +268,18 @@ public class TransferActivity extends AppCompatActivity implements LoaderManager
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_about) {
             startActivity(new Intent(this, AboutActivity.class));
+        } else if (item.getItemId() == R.id.action_refresh) {
+            updateWidgets();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void updateWidgets() {
+        Intent intent = new Intent(TransferActivity.this, FilesAppWidgetProvider.class);
+        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        AppWidgetManager widgetManager = AppWidgetManager.getInstance(getApplicationContext());
+        int[] ids = widgetManager.getAppWidgetIds(new ComponentName(getApplicationContext(), FilesAppWidgetProvider.class));
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
+        sendBroadcast(intent);
     }
 }

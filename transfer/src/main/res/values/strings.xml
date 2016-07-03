@@ -39,4 +39,5 @@
         ]]>
     </string>
     <string name="feedback_suggestions">Send feedback or suggestions</string>
+    <string name="action_refresh">REFRESH</string>
 </resources>

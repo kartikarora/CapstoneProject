@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
@@ -80,7 +81,10 @@ public class FilesRemoteViewsService extends RemoteViewsService {
                 String name = mCursor.getString(nameCol);
                 String url = mCursor.getString(urlCol);
 
-                views.setTextViewText(R.id.file_item_name_text_view, name);
+                Log.d("name", name);
+                Log.d("url", url);
+
+                views.setTextViewText(R.id.widget_file_item_name_text_view, name);
 
                 Bundle extras = new Bundle();
                 extras.putLong(FilesAppWidgetProvider.EXTRA_ITEM, id);
@@ -88,14 +92,14 @@ public class FilesRemoteViewsService extends RemoteViewsService {
                 Intent shareIntent = new Intent();
                 shareIntent.putExtras(extras);
                 shareIntent.setAction(FilesAppWidgetProvider.ACTION_SHARE);
-                views.setOnClickFillInIntent(R.id.file_item_share_image_button, shareIntent);
+                views.setOnClickFillInIntent(R.id.widget_file_item_share_image_button, shareIntent);
 
                 Bundle bundle = new Bundle();
                 bundle.putLong(FilesAppWidgetProvider.EXTRA_ITEM, id);
                 Intent fillInIntent = new Intent();
                 fillInIntent.putExtras(bundle);
                 fillInIntent.setAction(FilesAppWidgetProvider.ACTION_SHOW);
-                views.setOnClickFillInIntent(R.id.widget_list_item, fillInIntent);
+                views.setOnClickFillInIntent(R.id.widget_file_item_name_text_view, fillInIntent);
 
                 mCursor.moveToNext();
             }

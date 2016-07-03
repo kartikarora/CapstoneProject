@@ -47,7 +47,6 @@ public class DownloadCompleteBroadcastReceiver extends BroadcastReceiver {
                 .setContentTitle(context.getString(R.string.app_name))
                 .setContentText(context.getString(R.string.download_complete))
                 .setSmallIcon(R.drawable.ic_offline_pin)
-                //.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .setTicker(context.getString(R.string.download_complete))

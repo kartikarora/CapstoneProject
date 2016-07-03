@@ -21,14 +21,14 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
-        android:name=".applications.TransferApplication"
+        android:name="me.kartikarora.transfersh.applications.TransferApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".activities.TransferActivity"
+            android:name="me.kartikarora.transfersh.activities.TransferActivity"
             android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,7 +37,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activities.DownloadActivity">
+        <activity android:name="me.kartikarora.transfersh.activities.DownloadActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -63,38 +63,39 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activities.AboutActivity"
+            android:name="me.kartikarora.transfersh.activities.AboutActivity"
             android:label="@string/title_activity_about"
-            android:parentActivityName=".activities.TransferActivity">
+            android:parentActivityName="me.kartikarora.transfersh.activities.TransferActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".activities.TransferActivity" />
         </activity>
 
         <provider
-            android:name=".providers.FilesProvider"
+            android:name="me.kartikarora.transfersh.providers.FilesProvider"
             android:authorities="me.kartikarora.transfersh"
             android:exported="true"
             android:syncable="true"/>
 
-        <receiver android:name=".receivers.DownloadCompleteBroadcastReceiver">
+        <receiver android:name="me.kartikarora.transfersh.receivers.DownloadCompleteBroadcastReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".providers.FilesAppWidgetProvider">
+        <receiver android:name="me.kartikarora.transfersh.providers.FilesAppWidgetProvider">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="me.kartikarora.transfersh.ACTION_SHARE" />
+                <action android:name="me.kartikarora.transfersh.ACTION_SHOW" />
             </intent-filter>
-
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/files_appwidget_provider" />
         </receiver>
 
         <service
-            android:name=".services.FilesRemoteViewsService"
+            android:name="me.kartikarora.transfersh.services.FilesRemoteViewsService"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
     </application>
 

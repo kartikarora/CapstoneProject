@@ -36,8 +36,9 @@ import me.kartikarora.transfersh.services.FilesRemoteViewsService;
  */
 public class FilesAppWidgetProvider extends AppWidgetProvider {
     public static final String EXTRA_ITEM = "id";
-    public static final String ACTION_SHARE = "share";
-    public static final String ACTION_SHOW = "show";
+    public static final String ACTION_SHARE = "me.kartikarora.transfersh.ACTION_SHARE";
+    public static final String ACTION_SHOW = "me.kartikarora.transfersh.ACTION_SHOW";
+
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -53,7 +54,19 @@ public class FilesAppWidgetProvider extends AppWidgetProvider {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
             views.setOnClickPendingIntent(R.id.widget_item, pendingIntent);
 
-            views.setRemoteAdapter(R.id.scores_list, adapterIntent);
+            views.setRemoteAdapter(R.id.files_list, adapterIntent);
+
+            Intent shareIntent = new Intent(context, FilesAppWidgetProvider.class);
+            shareIntent.setAction(ACTION_SHARE);
+            PendingIntent sharePendingIntent = PendingIntent.getBroadcast(context, 0, shareIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+            views.setPendingIntentTemplate(R.id.files_list, sharePendingIntent);
+
+            Intent showIntent = new Intent(context, FilesAppWidgetProvider.class);
+            showIntent.setAction(ACTION_SHOW);
+            PendingIntent showPendingIntent = PendingIntent.getBroadcast(context, 0, showIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+            views.setPendingIntentTemplate(R.id.files_list, showPendingIntent);
 
             appWidgetManager.updateAppWidget(currentWidgetId, views);
 
